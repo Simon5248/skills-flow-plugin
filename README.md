@@ -84,6 +84,13 @@ Claude 會讀取 `.claude/state/flow.json` 告訴你目前在哪一階段、建�
 /flow-status
 ```
 
+## 前提條件
+
+| 工具 | 說明 |
+|------|------|
+| `bash` | **macOS/Linux**:內建。**Windows**:安裝 [Git for Windows](https://git-scm.com/download/win) 即附帶 Git Bash,安裝後 `bash` 自動加入 PATH。 |
+| `jq` | Hook 用來解析 JSON。沒有的話會 fallback 用 `grep`,建議裝。[下載 jq](https://jqlang.github.io/jq/) |
+
 ## 客製化
 
 - **想關掉提示**:把 `settings.json` 裡 `hooks` 區塊註解掉。
