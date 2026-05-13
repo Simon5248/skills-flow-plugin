@@ -8,7 +8,7 @@
 
 ```bash
 # clone 本 repo
-git clone https://github.com/YOUR_USERNAME/skills-flow-plugin.git
+git clone https://github.com/Simon5248/skills-flow-plugin.git
 
 # 把 .claude/ 複製進你的目標專案
 cp -r skills-flow-plugin/.claude /path/to/your-project/
@@ -17,7 +17,7 @@ cp -r skills-flow-plugin/.claude /path/to/your-project/
 **方式二:全域安裝(所有專案共用)**
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/skills-flow-plugin.git
+git clone https://github.com/Simon5248/skills-flow-plugin.git
 cp -r skills-flow-plugin/.claude ~/.claude
 ```
 
