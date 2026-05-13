@@ -69,11 +69,6 @@ esac
 # 寫入「已提示過」記號
 echo "$STAGE" > "$LAST_NOTIFIED_FILE"
 
-# 印到 stderr,Claude Code 會以系統訊息顯示給使用者
-echo ""
-echo "──────────────────────────"
-echo "$MSG"
-echo "其他指令:\`/flow-status\` 查進度 · \`/flow-next\` 看建議"
-echo "──────────────────────────"
-
+# 輸出到 stderr — Claude Code 將 stderr 顯示給使用者,stdout 則傳回給 Claude 作為 context
+echo ""echo "──────────────────────────"echo "$MSG"echo "其他指令:\`/flow-status\` 查進度 · \`/flow-next\` 看建議"echo "──────────────────────────"
 exit 0
