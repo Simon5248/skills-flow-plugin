@@ -1,0 +1,9 @@
+# 文字檔統一用 LF（跨平台一致）
+* text=auto
+
+# Shell scripts 強制 LF（Windows 的 CRLF 會讓 bash 讀不到 shebang）
+*.sh text eol=lf
+
+# Markdown 跟 JSON 也統一 LF
+*.md text eol=lf
+*.json text eol=lf

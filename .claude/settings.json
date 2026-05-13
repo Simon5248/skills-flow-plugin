@@ -1,0 +1,23 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash $CLAUDE_PROJECT_DIR/.claude/hooks/flow-notify.sh"
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(cat .claude/state/flow.json:*)",
+      "Bash(echo:*)",
+      "Bash(mkdir -p .claude/state:*)",
+      "Bash(jq:*)"
+    ]
+  }
+}

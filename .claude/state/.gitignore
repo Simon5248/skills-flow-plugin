@@ -1,0 +1,4 @@
+*.json
+.last_notified_stage
+!.gitkeep
+!.gitignore
