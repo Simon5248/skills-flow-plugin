@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
 # flow-notify.sh
 # Stop hook:當 Claude 回答結束時,讀取 flow state 並印出下一步建議。
-# 這是「關鍵節點才提示」的核心:只有 stage 剛被推進的時候才提示,
-# 避免每輪都提示打擾使用者。
-
-set -euo pipefail
+# 只有 stage 剛被推進時才提示,避免每輪重複打擾。
+#
+# exit 1 + stderr:Claude Code 把 stderr 顯示給用戶,Claude 仍然停下來等待。
 
 STATE_FILE=".claude/state/flow.json"
 LAST_NOTIFIED_FILE=".claude/state/.last_notified_stage"
@@ -14,11 +13,9 @@ LAST_NOTIFIED_FILE=".claude/state/.last_notified_stage"
 
 # 讀目前 stage
 if command -v jq >/dev/null 2>&1; then
-  # 接受 .flow 或 .feature 兩種欄位名稱（Claude 有時會寫成 feature）
   FLOW=$(jq -r '(.flow // .feature) // empty' "$STATE_FILE")
   STAGE=$(jq -r '.stage // empty' "$STATE_FILE")
 else
-  # jq 不在就用 grep 兜（同樣接受兩種欄位名）
   FLOW=$(grep -o '"flow"[[:space:]]*:[[:space:]]*"[^"]*"' "$STATE_FILE" | sed 's/.*"\([^"]*\)"$/\1/')
   [ -z "$FLOW" ] && FLOW=$(grep -o '"feature"[[:space:]]*:[[:space:]]*"[^"]*"' "$STATE_FILE" | sed 's/.*"\([^"]*\)"$/\1/')
   STAGE=$(grep -o '"stage"[[:space:]]*:[[:space:]]*"[^"]*"' "$STATE_FILE" | sed 's/.*"\([^"]*\)"$/\1/')
@@ -26,7 +23,7 @@ fi
 
 [ -n "$FLOW" ] && [ -n "$STAGE" ] || exit 0
 
-# 比對上次提示過的 stage,一樣的話就不重複提示(避免每輪都跳)
+# 比對上次提示過的 stage,一樣的話就不重複提示
 LAST=""
 [ -f "$LAST_NOTIFIED_FILE" ] && LAST=$(cat "$LAST_NOTIFIED_FILE")
 [ "$STAGE" = "$LAST" ] && exit 0
@@ -52,9 +49,9 @@ case "$FLOW:$STAGE" in
   bugfix:root_cause_found)
     MSG="✅ 根因確認。下一步:寫一個能重現 bug 的 failing test(回歸保護)。" ;;
   bugfix:failing_test_written)
-    MSG="✅ Failing test 就位。下一步:做**最小**修復讓測試通過(不要趁機重構)。" ;;
+    MSG="✅ Failing test 就位。下一步:做最小修復讓測試通過(不要趁機重構)。" ;;
   bugfix:fix_applied)
-    MSG="✅ 修復完成。下一步:\`/verification-before-completion\` 跑完整測試套件,確認沒打壞別的。" ;;
+    MSG="✅ 修復完成。下一步:\`/verification-before-completion\` 跑完整測試套件。" ;;
   bugfix:verified)
     MSG="✅ 驗證通過。下一步:\`/requesting-code-review\` 請求審查。" ;;
   bugfix:reviewed)
@@ -62,13 +59,17 @@ case "$FLOW:$STAGE" in
   bugfix:completed)
     MSG="🎉 Bugfix flow 已完成。可用 \`/flow-start\` 開始下一個任務。" ;;
   *)
-    # 其他 stage(started、進行中)不提示
     exit 0 ;;
 esac
 
 # 寫入「已提示過」記號
 echo "$STAGE" > "$LAST_NOTIFIED_FILE"
 
-# 輸出到 stderr — Claude Code 將 stderr 顯示給使用者,stdout 則傳回給 Claude 作為 context
-echo ""echo "──────────────────────────"echo "$MSG"echo "其他指令:\`/flow-status\` 查進度 · \`/flow-next\` 看建議"echo "──────────────────────────"
-exit 0
+# exit 1 + stderr:Claude Code 把 stderr 以 hook notification 顯示給用戶
+# Claude 仍然停下來等待用戶輸入,不會自動繼續
+echo "" >&2
+echo "──────────────────────────" >&2
+echo "$MSG" >&2
+echo "其他指令:\`/flow-status\` 查進度 · \`/flow-next\` 看建議" >&2
+echo "──────────────────────────" >&2
+exit 1
