@@ -4,6 +4,12 @@ description: 修 bug 專用 flow:從 systematic-debugging 起手 → 寫 failing
 
 你正在執行 **bugfix flow**。修 bug 不需要 brainstorming(問題已存在),但**必須**走系統化除錯,**禁止靠直覺改 code**。
 
+**state 檔格式(嚴格遵守,欄位名稱不可更改)**:
+```json
+{"flow":"bugfix","stage":"<stage名稱>","task":"<任務描述>","started_at":"<ISO timestamp>"}
+```
+> `flow` 欄位必須是 `"bugfix"`,**不可以用其他欄位名稱取代**。
+
 ## 強制執行順序
 
 ### 階段 1:systematic-debugging

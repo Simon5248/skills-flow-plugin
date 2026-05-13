@@ -14,11 +14,13 @@ LAST_NOTIFIED_FILE=".claude/state/.last_notified_stage"
 
 # 讀目前 stage
 if command -v jq >/dev/null 2>&1; then
-  FLOW=$(jq -r '.flow // empty' "$STATE_FILE")
+  # 接受 .flow 或 .feature 兩種欄位名稱（Claude 有時會寫成 feature）
+  FLOW=$(jq -r '(.flow // .feature) // empty' "$STATE_FILE")
   STAGE=$(jq -r '.stage // empty' "$STATE_FILE")
 else
-  # jq 不在就用 grep 兜
+  # jq 不在就用 grep 兜（同樣接受兩種欄位名）
   FLOW=$(grep -o '"flow"[[:space:]]*:[[:space:]]*"[^"]*"' "$STATE_FILE" | sed 's/.*"\([^"]*\)"$/\1/')
+  [ -z "$FLOW" ] && FLOW=$(grep -o '"feature"[[:space:]]*:[[:space:]]*"[^"]*"' "$STATE_FILE" | sed 's/.*"\([^"]*\)"$/\1/')
   STAGE=$(grep -o '"stage"[[:space:]]*:[[:space:]]*"[^"]*"' "$STATE_FILE" | sed 's/.*"\([^"]*\)"$/\1/')
 fi
 

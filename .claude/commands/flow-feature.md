@@ -4,6 +4,12 @@ description: 走完整新功能開發 flow:brainstorming → plans → TDD → �
 
 你正在執行 **feature flow**。請**嚴格依序**走完以下階段,**不要跳階段**。每完成一階段就把 `.claude/state/flow.json` 的 `stage` 欄位更新為下一階段名稱。
 
+**state 檔格式(嚴格遵守,欄位名稱不可更改)**:
+```json
+{"flow":"feature","stage":"<stage名稱>","task":"<任務描述>","started_at":"<ISO timestamp>"}
+```
+> `flow` 欄位必須是 `"feature"`,**不可以用 `feature`、`type`、`name` 等其他欄位名稱取代**。
+
 ## 強制執行順序
 
 ### 階段 1:brainstorming
