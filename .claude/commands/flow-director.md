@@ -30,9 +30,17 @@ description: "[Director 層] 為複雜任務建立戰略地圖 (Strategic Map),�
 - 每個節點是一個**可驗證的里程碑**，而非具體操作步驟
 - 節點粒度：「登入 A 站並獲取授權憑證」✅ / 「點擊登入按鈕」❌（太細）
 - 標記每個節點的風險等級：
-  - 🔴 高風險：依賴外部 UI Selector、第三方 API、不穩定網路
+  - 🔴 高風險：依賴外部 UI Selector、第三方 API、不穩定網路；**或涉及金流寫入、大批刪除、帳號狀態變更等不可逆操作**
   - 🟡 中風險：依賴已知但可能有版本變動的介面
   - 🟢 低風險：本地計算、資料轉換、寫入已驗證的端點
+
+**🔴 高風險節點強制規則**（動態風險標註）：
+- 在 state JSON 中，高風險節點加入 `"require_confirmation": true`
+- Actor 層執行到該節點時，**必須在動作發生前暫停**，向使用者展示：
+  1. 即將執行的具體操作（例：「將向 A 站 API 送出 POST /payment，金額 {amount}」）
+  2. 操作不可逆程度（「此操作無法回滾」 / 「可透過 {方法} 回滾」）
+  3. 影響範圍（「影響 {N} 筆記錄」）
+- **等待使用者明確輸入「確認執行」後才繼續，任何其他回應一律中止**
 
 以表格呈現戰略地圖給使用者確認：
 
@@ -74,15 +82,39 @@ mkdir -p .claude/state
   "stage": "director_done",
   "task": "<使用者任務描述>",
   "started_at": "<ISO 8601 timestamp>",
+  "global_context": {
+    "auth_tokens": {},
+    "affected_systems": [],
+    "shared_data": {}
+  },
   "strategic_map": [
-    {"id": 1, "node": "<節點描述>", "system": "<目標系統>", "acceptance": "<驗收標準>", "risk": "high|medium|low", "status": "pending"},
-    {"id": 2, "node": "<節點描述>", "system": "<目標系統>", "acceptance": "<驗收標準>", "risk": "high|medium|low", "status": "pending"}
+    {
+      "id": 1,
+      "node": "<節點描述>",
+      "system": "<目標系統>",
+      "acceptance": "<驗收標準>",
+      "risk": "high|medium|low",
+      "require_confirmation": false,
+      "status": "pending"
+    },
+    {
+      "id": 2,
+      "node": "<節點描述（高風險範例）>",
+      "system": "<目標系統>",
+      "acceptance": "<驗收標準>",
+      "risk": "high",
+      "require_confirmation": true,
+      "status": "pending"
+    }
   ],
   "current_node_id": 1,
   "exploration_attempts": 0,
-  "anchor_version": 1
+  "anchor_version": 1,
+  "token_health": "100%"
 }
 ```
+
+> **規則**：`risk` 為 `"high"` 的節點，`require_confirmation` 必須設為 `true`。
 
 ---
 

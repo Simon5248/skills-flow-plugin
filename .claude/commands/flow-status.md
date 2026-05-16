@@ -35,10 +35,12 @@ description: 顯示目前 flow 的進度卡片（完成的階段打勾，目前�
 [*] 2. failing test               ← 目前在這
 [ ] 3. 修復
 [ ] 4. verification
+[ ] 4.5. 爆炸半徑評估
 [ ] 5. code-review
 [ ] 6. finishing-branch
 
 除錯嘗試次數: <debug_attempts> | 修復嘗試次數: <fix_attempts>
+受影響模組（blast_radius）: <blast_radius 陣列，若已評估則列出，否則顯示「尚未評估」>
 ```
 
 ### 若 flow = maintain，顯示：
@@ -48,6 +50,7 @@ description: 顯示目前 flow 的進度卡片（完成的階段打勾，目前�
 開始於: <started_at>
 戰略地圖版本: v<anchor_version>
 語意探索嘗試次數: <exploration_attempts>
+上下文健康度: <token_health>
 
 戰略地圖：
   [✓] 節點 1: <node> (<system>) — <result>
@@ -58,6 +61,12 @@ description: 顯示目前 flow 的進度卡片（完成的階段打勾，目前�
 
 > 若 `exploration_attempts >= 2`，顯示警告：
 > ⚠️ 語意探索已嘗試 {exploration_attempts} 次。若再失敗，請使用者提供更多上下文或考慮替代方案。
+
+> **token_health 警告**（依數值觸發）：
+> - 若 `token_health <= "40%"`（即 40 以下）：顯示
+>   > ⚠️ 上下文健康度僅剩 {token_health}，建議執行 Checkpoint：將目前 `flow.json` 備份，然後開新對話貼入繼續作業。
+> - 若 `token_health <= "20%"`（即 20 以下）：顯示
+>   > 🚨 上下文即將耗盡！必須立即執行 Checkpoint 歸檔，否則後續節點將失去戰略錨點。
 
 3. 依 `stage` 欄位，把已完成的階段標 `[✓]`、目前階段標 `[*]`、未開始標 `[ ]`。
 

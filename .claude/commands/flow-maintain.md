@@ -11,10 +11,16 @@ description: "[Actor 層] 多系統維護 flow：依戰略地圖逐節點執行�
   "stage": "<stage名稱>",
   "task": "<任務描述>",
   "started_at": "<ISO timestamp>",
+  "global_context": {
+    "auth_tokens": {},
+    "affected_systems": [],
+    "shared_data": {}
+  },
   "strategic_map": [...],
   "current_node_id": <數字>,
   "exploration_attempts": <數字>,
-  "anchor_version": <數字>
+  "anchor_version": <數字>,
+  "token_health": "100%"
 }
 ```
 
@@ -53,6 +59,18 @@ description: "[Actor 層] 多系統維護 flow：依戰略地圖逐節點執行�
 
 ### 🛠️ 步驟 B：精準執行
 
+**高風險節點二次確認（動態風險標註）**：
+- 先讀取本節點的 `require_confirmation` 欄位
+- 若為 `true`：**秘選執行前必須暫停**，展示給使用者確認：
+  > 「❗️ **高風險操作需二次確認**
+  > - 即將執行：{node}
+  > - 目標系統：{system}
+  > - 不可逆程度：[請說明此操作能否回滾及方法]
+  > - 預常影響範圍：{acceptance}
+  > 
+  > 請輸入「確認執行」才繼續。任何其他回應一律中止。」
+- 其餘節點可直接執行
+
 依節點性質選擇對應的 Skill 類別執行：
 
 | 目標系統類型 | 可用 Skill 示例 |
@@ -66,6 +84,15 @@ description: "[Actor 層] 多系統維護 flow：依戰略地圖逐節點執行�
 **執行時的鐵律**：
 - 每次只做**一個原子操作**，取得結果後再決定下一步
 - 禁止假設操作成功（「應該已經寫入了」）—— 必須拿到**實際證據**（回應碼、DB 查詢結果、截圖）
+- **憑證持久化**：節點執行中取得的 Token、Session、共用數據，必須實時寫入 `global_context`：
+  ```json
+  "global_context": {
+    "auth_tokens": {"site_a": "bearer_xxx"},
+    "affected_systems": ["A_Site"],
+    "shared_data": {"policy_id": "POL-001"}
+  }
+  ```
+  **禁止依賴對話記憶帶憑證**（長對話後記憶會消失）—— 它必須在 state 檔中
 
 ---
 
@@ -103,6 +130,7 @@ exploration_attempts += 1
    - 更新 `current_node_id` 為下一個節點
    - 更新 state `stage = "node_{id}_done"`
    - **執行 Strategic Anchor Check**（見下方）
+   - **執行上下文剪枝（Context Pruning）**（見下方）
 4. 若未達成：返回步驟 C，觸發語意探索
 
 ---
@@ -117,6 +145,22 @@ exploration_attempts += 1
 4. ✅ 下一個節點的前置條件是否已滿足？
 
 若任何一項為「否」→ 停下來，向使用者說明差異，**等待指示**再繼續。
+
+---
+
+## 上下文剪枝（Context Pruning）— 節點切換時強制執行
+
+**每個節點完成、準備切換到下一個節點前**，執行記憶體壓縮：
+
+1. **只保留戰略結果**，寫入 state 的 `global_context.shared_data` 或節點的 `result` 欄位
+   - ✅ 保留：API 回應的關鍵欄位、DB row count、Token、最終狀態值
+   - ❌ 丟棄：完整 HTML 頁面內容、冗長 Log、中間步驟的錯誤訊息、截圖說明文字
+2. **向使用者宣告剪枝摘要**（一行即可）：
+   > 「節點 {id} 結果已保存：{result 摘要}。冗餘上下文已丟棄，準備進入節點 {id+1}。」
+3. **更新 token_health 估算**（依對話輪數粗估）：
+   - 1–10 輪：`"100%"` | 11–20 輪：`"70%"` | 21–30 輪：`"40%"` | 30 輪以上：`"15%"`
+   - 若 `token_health` 降至 40% 以下，**主動提醒**：
+     > 「⚠️ 上下文健康度僅剩 {token_health}，建議在此進行 checkpoint：將 flow.json 備份，下次可從節點 {current_node_id} 繼續。」
 
 ---
 

@@ -12,7 +12,8 @@ description: 修 bug 專用 flow：從 systematic-debugging 起手 → 寫 faili
   "task": "<任務描述>",
   "started_at": "<ISO timestamp>",
   "debug_attempts": 0,
-  "fix_attempts": 0
+  "fix_attempts": 0,
+  "blast_radius": []
 }
 ```
 > `flow` 欄位必須是 `"bugfix"`，**不可以用其他欄位名稱取代**。
@@ -80,9 +81,44 @@ description: 修 bug 專用 flow：從 systematic-debugging 起手 → 寫 faili
 
 ---
 
+### 階段 4.5：副作用評估（爆炸半徑 Blast Radius Analysis）
+
+> **為什麼需要這個階段？**
+> 保險系統高度耆合。一個輕微的修改可能引發連鎖效應：修了保單狀態就可能影響資料同步、費率計算、审核流程。
+
+**強制執行以下分析**：
+
+1. **列出修改的檔案/模組**
+   - 我直接修改了哪些檔案、庾型、方法、資料庫表？
+
+2. **識別連動模組**（檢查這些問題）：
+   - 哪些其他功能/服務呼叫了我修改的模組？
+   - 哪些測試套件依賴了我修改的行為？
+   - 有沒有 Webhook / 事件總線 / 排程任務依賴了我修改的模組？
+   - 資料庫跑法、Index、觸發器有沒有受影響？
+
+3. **產出爆炸半徑清單**，以小標題呼現，對每項列出：
+   - 連動模組名稱
+   - 影響顏影評估：「驗證通過，應不受影響」 / 「需手動驗證」 / 「高風險——建議加入專項測試」
+
+4. 將結果寫入 state：
+   ```json
+   "blast_radius": [
+     {"module": "PolicySyncService", "risk": "low", "reason": "單元測試涉及，已通過"},
+     {"module": "BillingCalculator", "risk": "high", "reason": "共用庾型變更，需手動驗證"}
+   ]
+   ```
+
+5. 若出現 **risk = high** 的項目：**停下來向使用者報告**，討論是否需要對連動模組加寫專項測試再進行 code review
+
+- 更新 state：`stage = "blast_radius_assessed"`
+
+---
+
 ### 階段 5：requesting-code-review
 - 呼叫 superpowers `requesting-code-review` skill
 - 摘要：bug 現象、根因、修法、為什麼這樣修是最小變更、回歸測試
+- **必須附上爆炸半徑清單**（`blast_radius` 內容）讓 reviewer 了解高風險項
 - 更新 state：`stage = "reviewed"`
 
 ---
@@ -101,8 +137,7 @@ description: 修 bug 專用 flow：從 systematic-debugging 起手 → 寫 faili
 | 禁止靠直覺改 code | 沒走完 systematic-debugging 之前，任何修改都是猜測 |
 | 禁止跳過 failing test | 沒有回歸測試，bug 會回來 |
 | 禁止死循環 | 同一個假設驗證 ≥ 3 次必須切換視角 |
-| 禁止擴大修改範圍 | 只做讓 failing test 通過的最小修改 |
-
+| 禁止擴大修改範圍 | 只做讓 failing test 通過的最小修改 || 強制爆炸半徑評估 | 驗證通過後必須分析連動模組，高風險連動須廣告使用者 |
 若 bug 在 systematic-debugging 階段發現「其實是設計問題」，**停下來**改走 feature flow（因為要重新設計，需要 brainstorming 和計畫）。
 
 Bug 描述：$ARGUMENTS
