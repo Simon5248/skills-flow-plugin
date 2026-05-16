@@ -43,6 +43,10 @@ description: 走完整新功能開發 flow：brainstorming → plans → TDD →
 
 ### 階段 3：test-driven-development
 - 執行 **Strategic Anchor**：對照 plan 確認測試清單完整
+- **環境可用性檢查**（先做，否則測試跑不起來）：
+  - 確認 MSSQL / 連動 API 測試環境（SIT/UAT）目前是否**可連線、資料正常**
+  - 若環境不可用：**停下來告訴使用者**，不要在無法驗證的環境下繼續寫測試
+  - 可用才繼續；在 state 中記錄 `"test_env_checked": true`
 - 呼叫 superpowers `test-driven-development` skill
 - 依 plan 中的測試清單，**先把測試寫好且確認會失敗**（紅燈）
 - 完成條件：測試已寫、執行後失敗、使用者確認測試合理
