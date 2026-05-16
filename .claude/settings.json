@@ -6,7 +6,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .claude/hooks/flow-notify.sh"
+            "_comment_shell_options": "依作業系統選擇一種，其餘刪除或保留一個即可",
+            "_bash":        "bash .claude/hooks/flow-notify.sh",
+            "_cmd":         "cmd /c .claude\\hooks\\flow-notify.cmd",
+            "_powershell":  "powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/flow-notify.ps1",
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/flow-notify.ps1"
           }
         ]
       }
@@ -17,7 +21,12 @@
       "Bash(cat .claude/state/flow.json:*)",
       "Bash(echo:*)",
       "Bash(mkdir -p .claude/state:*)",
-      "Bash(jq:*)"
+      "Bash(mkdir:*)",
+      "Bash(jq:*)",
+      "Bash(jq -r:*)",
+      "Bash(cat .claude/state/.last_notified_stage:*)",
+      "Bash(powershell*:*)",
+      "Bash(cmd /c*:*)"
     ]
   }
 }
